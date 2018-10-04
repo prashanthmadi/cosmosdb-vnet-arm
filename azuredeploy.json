@@ -1,0 +1,111 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "apiType": {
+            "defaultValue": "Cassandra",
+            "allowedValues": [
+                "Cassandra",
+                "Gremlin",
+                "MongoDB",
+                "SQL",
+                "Table"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The Azure Cosmos DB API type, by default Cassandra; otherwise one of Gremlin, MongoDB, SQL, or Table"
+            }
+        },
+        "databaseAccountName": {
+            "type": "String",
+            "metadata": {
+                "description": "The Azure Cosmos DB account name."
+            }
+        },
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "String",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+    "variables": {
+        "offerType": "Standard",
+        "cosmosdbtestvnetPrefix": "10.0.0.0/16",
+        "cosmosdbtestvnetSubnet1Name": "default",
+        "cosmosdbtestvnetSubnet1Prefix": "10.0.0.0/24",
+        "cosmosdbtestvnetSubnet2Name": "Subnet-2",
+        "cosmosdbtestvnetSubnet2Prefix": "10.0.1.0/24"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.DocumentDB/databaseAccounts",
+            "kind": "[if(equals(parameters('apiType'), 'MongoDB'), 'MongoDB', 'GlobalDocumentDB')]",
+            "name": "[parameters('databaseAccountName')]",
+            "apiVersion": "2015-04-08",
+            "location": "[parameters('location')]",
+            "properties": {
+                "name": "[parameters('databaseAccountName')]",
+                "databaseAccountOfferType": "[variables('offerType')]",
+                "locations": [
+                    {
+                        "locationName": "[parameters('location')]",
+                        "failoverPriority": 0
+                    },
+                    {
+                        "locationName": "[parameters('location')]",
+                        "failoverPriority": 1
+                    }
+                ],
+                "isVirtualNetworkFilterEnabled": "True",
+                "virtualNetworkRules": [
+                    {
+                        "id": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/','cosmosdbtestvnet/subnets/default')]"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "cosmosdbtestvnet",
+            "apiVersion": "2017-03-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "cosmosdbtestvnet"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('cosmosdbtestvnetPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('cosmosdbtestvnetSubnet1Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('cosmosdbtestvnetSubnet1Prefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureCosmosDb"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "[variables('cosmosdbtestvnetSubnet2Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('cosmosdbtestvnetSubnet2Prefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureCosmosDb"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        }
+    ]
+}
