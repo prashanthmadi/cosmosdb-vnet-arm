@@ -38,8 +38,7 @@
         "cosmosdbtestvnetSubnet2Name": "Subnet-2",
         "cosmosdbtestvnetSubnet2Prefix": "10.0.1.0/24"
     },
-    "resources": [
-        {
+    "resources": [{
             "type": "Microsoft.DocumentDB/databaseAccounts",
             "kind": "[if(equals(parameters('apiType'), 'MongoDB'), 'MongoDB', 'GlobalDocumentDB')]",
             "name": "[parameters('databaseAccountName')]",
@@ -48,8 +47,7 @@
             "properties": {
                 "name": "[parameters('databaseAccountName')]",
                 "databaseAccountOfferType": "[variables('offerType')]",
-                "locations": [
-                    {
+                "locations": [{
                         "locationName": "[parameters('location')]",
                         "failoverPriority": 0
                     },
@@ -58,12 +56,16 @@
                         "failoverPriority": 1
                     }
                 ],
+                "capabilities": [{
+                    "name": "[if(equals(parameters('apiType'), 'Cassandra'), 'EnableCassandra', if(equals(parameters('apiType'), 'Gremlin'), 'EnableGremlin', if(equals(parameters('apiType'), 'MongoDB'), '', if(equals(parameters('apiType'), 'SQL'), '', if(equals(parameters('apiType'), 'Table'), 'EnableTable', '')))))]"
+                }],
                 "isVirtualNetworkFilterEnabled": "True",
-                "virtualNetworkRules": [
-                    {
-                        "id": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/','cosmosdbtestvnet/subnets/default')]"
-                    }
-                ]
+                "virtualNetworkRules": [{
+                    "id": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/','cosmosdbtestvnet/subnets/default')]"
+                }]
+            },
+            "tags": {
+                "defaultExperience": "[if(equals(parameters('apiType'), 'Cassandra'), 'Cassandra', if(equals(parameters('apiType'), 'Gremlin'), 'Graph', if(equals(parameters('apiType'), 'MongoDB'), 'MongoDB', if(equals(parameters('apiType'), 'SQL'), 'DocumentDB', if(equals(parameters('apiType'), 'Table'), 'Table', '')))))]"
             }
         },
         {
@@ -80,27 +82,22 @@
                         "[variables('cosmosdbtestvnetPrefix')]"
                     ]
                 },
-                "subnets": [
-                    {
+                "subnets": [{
                         "name": "[variables('cosmosdbtestvnetSubnet1Name')]",
                         "properties": {
                             "addressPrefix": "[variables('cosmosdbtestvnetSubnet1Prefix')]",
-                            "serviceEndpoints": [
-                                {
-                                    "service": "Microsoft.AzureCosmosDb"
-                                }
-                            ]
+                            "serviceEndpoints": [{
+                                "service": "Microsoft.AzureCosmosDb"
+                            }]
                         }
                     },
                     {
                         "name": "[variables('cosmosdbtestvnetSubnet2Name')]",
                         "properties": {
                             "addressPrefix": "[variables('cosmosdbtestvnetSubnet2Prefix')]",
-                            "serviceEndpoints": [
-                                {
-                                    "service": "Microsoft.AzureCosmosDb"
-                                }
-                            ]
+                            "serviceEndpoints": [{
+                                "service": "Microsoft.AzureCosmosDb"
+                            }]
                         }
                     }
                 ]
